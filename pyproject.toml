@@ -1,0 +1,16 @@
+[project]
+name = "gdelt-iceberg"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "kafka-python-ng",
+    "pandas>=2.3.2",
+    "pyarrow>=21.0.0",
+    "pyiceberg[sql-postgres]>=0.9.1",
+    "six>=1.17.0",
+]
+
+[tool.uv.sources]
+kafka-python-ng = { git = "https://github.com/wbarnha/kafka-python-ng.git" }
