@@ -4,6 +4,7 @@ data/
 
 # Ignore Python cache and Ruff cache
 **/__pycache__/
+*/__pycache__/
 **/.ruff_cache/
 
 # Ignore test and config files
