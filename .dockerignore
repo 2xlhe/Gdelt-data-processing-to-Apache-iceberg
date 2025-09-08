@@ -1,0 +1,9 @@
+# Ignore data directories
+data/
+
+# Ignore Python cache and Ruff cache
+**/__pycache__/
+**/.ruff_cache/
+
+# Ignore test and config files
+.test_manual.py
