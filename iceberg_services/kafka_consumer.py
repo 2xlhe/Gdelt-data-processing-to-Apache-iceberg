@@ -33,15 +33,12 @@ for msg in consumer:
 
         logger.info(f"\nSaved parquet in {file_path[0]}")
 
-        logger.info(f"{GREEN_COLOUR}> Saved parquet in {file_path[0]}{RESET}")
-        logger.info(f"{GREEN_COLOUR}\nSaved parquet in {file_path[0]}{RESET}")
+        logger.info(f"> Saved parquet in {file_path[0]}")
         for file in file_path:
             try:
                 insert_to_iceberg(file)
             except Exception as e:
-                logger.error(
-                    f"{RED_COLOUR}Error inserting {file} to iceberg: {e.args}{RESET}\n"
-                )
+                logger.error(f" error inserting {file} to iceberg: {e.args}\n")
     except Exception as e:
-        logger.error(f"{RED_COLOUR}Error processing message: {e}{RESET}\n")
+        logger.error(f"Error processing message: {e}\n")
         continue

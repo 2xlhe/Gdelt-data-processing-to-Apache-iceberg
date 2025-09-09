@@ -6,7 +6,7 @@ services:
     container_name: kafka
     healthcheck:
       test: /opt/kafka/bin/kafka-cluster.sh cluster-id --bootstrap-server broker:9092 || exit 1
-      interval: 1s
+      interval: 5s
       timeout: 20s
       retries: 60
     ports:
@@ -22,31 +22,3 @@ services:
       POSTGRES_PASSWORD: iceberg-postgres
     ports:
       - 5432:5432
-
-#  producer-service:
-#    command: uv run /app/iceberg_services/kafka_producer.py
-#    restart: always
-#    build:
-#      context: .
-#      dockerfile: iceberg_services/Dockerfile
-#    depends_on:
-#      broker:
-#        condition: service_healthy
-#    environment:
-#      KAFKA_BROKER: broker:9092
-#
-#  consumer-service:
-#    command: uv run /app/iceberg_services/kafka_consumer.py
-#    restart: always
-#    build:
-#      context: .
-#      dockerfile: iceberg_services/Dockerfile
-#    depends_on:
-#      broker:
-#        condition: service_healthy
-#      postgresql:
-#        condition: service_started
-#    environment:
-#      KAFKA_BROKER: broker:9092
-#      POSTGRES_SERVER: postgresql:5432
-#      PYICEBERG_HOME: /app
