@@ -116,9 +116,7 @@ def table_to_iceberg(name: str, catalog: Catalog, path: str, schema: pa.Schema):
 
 def gdelt_into_iceberg(paths):
     export_path, gkg_path, mentions_path = paths
-    catalog = load_catalog(**CATALOG_PROPERTIES)
     catalog = load_catalog(name=CATALOG_NAME)
-    catalog = load_catalog(name=CATALOG_NAMEs)
 
     schemas = create_schemas()
 

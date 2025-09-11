@@ -1,24 +1,122 @@
 name: iceberg-mgc
 
 services:
-  broker:
-    image: apache/kafka:latest
-    container_name: kafka
-    healthcheck:
-      test: /opt/kafka/bin/kafka-cluster.sh cluster-id --bootstrap-server broker:9092 || exit 1
-      interval: 5s
-      timeout: 20s
-      retries: 60
-    ports:
-      - "9092:9092"
-    volumes:
-      - ./data:/var/lib/kafka/data
-
   postgresql:
-    hostname: postgres
     image: postgres:latest
+    container_name: postgres
+    hostname: postgres
     restart: always
     environment:
+      POSTGRES_USER: iceberg
       POSTGRES_PASSWORD: iceberg-postgres
+      POSTGRES_DB: postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - kafka
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka
+    hostname: kafka
+    # expose host and internal listener ports
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      # Listeners: one for other containers (DOCKER), one for host access (HOST), one controller listener
+      KAFKA_LISTENERS: CONTROLLER://kafka:29093,DOCKER://0.0.0.0:9093,HOST://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: DOCKER://kafka:9093,HOST://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # KRaft single-node identity
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+
+      # Single-node dev conveniences
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+
+      # Data and storage
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - kafka
+    healthcheck:
+      # Verify the broker can answer metadata quorum status (requires broker to be accepting requests)
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server localhost:9092 describe --status >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8087:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: postgres
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka
+
+  #Example application services waiting for healthy Kafka and Postgres:
+  producer-service:
+    build:
+      context: .
+      dockerfile: iceberg_services/Dockerfile
+    command: uv run /app/iceberg_services/kafka_producer.py
+    environment:
+      KAFKA_BROKER: kafka:9093
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgresql:
+        condition: service_started
+    restart: always
+    networks:
+      - kafka
+  
+  consumer-service:
+    build:
+      context: .
+      dockerfile: iceberg_services/Dockerfile
+    command: uv run /app/iceberg_services/kafka_consumer.py
+    environment:
+      KAFKA_BROKER: kafka:9093
+      POSTGRES_HOST: postgresql
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: iceberg
+      POSTGRES_PASSWORD: iceberg-postgres
+      PYICEBERG_HOME: /app
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgresql:
+        condition: service_started
+    restart: always
+    networks:
+      - kafka
+
+networks:
+  kafka:
+    driver: bridge
+
+volumes:
+  kafka-data:
+  postgres-data:

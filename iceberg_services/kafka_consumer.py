@@ -8,13 +8,11 @@ from iceberg.iceberg import insert_to_iceberg
 
 logger = logging.getLogger(__name__)
 
-KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9093")
 
 logger.debug(f"\nThe broker is {KAFKA_BROKER}")
 
 YELLOW_COLOUR = "\033[93m"
-RED_COLOUR = "\033[91m"
-RED_COLOUR = "\033[91m"
 GREEN_COLOUR = "\033[92m"
 GREY_COLOUR = "\033[2m"
 RESET = "\033[0m"
