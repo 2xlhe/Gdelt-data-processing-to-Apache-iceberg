@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producer-service
+  namespace: gdeltprocessor
+  labels:
+    app: producer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: producer-service
+  template:
+    metadata:
+      labels:
+        app: producer-service
+    spec:
+      imagePullSecrets:
+        - name: coe
+      containers:
+        - name: producer-service
+          image: container-registry.br-ne1.magalu.cloud/iceberg-related/iceberg-mgc-producer-service:latest
+          imagePullPolicy: Always
+          command: ["sh", "-c"]
+          args: ["uv run /app/iceberg_services/kafka_producer.py"]
+          env:
+            - name: KAFKA_BROKER
+              value: kafka-service.kafka.svc.cluster.local:9092
+            - name: APP_PATH
+              value: /app
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka-service.kafka.svc.cluster.local:9092

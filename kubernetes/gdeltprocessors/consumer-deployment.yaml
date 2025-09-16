@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer-service
+  namespace: gdeltprocessor
+  labels:
+    app: consumer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumer-service
+  template:
+    metadata:
+      labels:
+        app: consumer-service
+    spec:
+      imagePullSecrets:
+        - name: coe
+        - name: iceberg-secrets
+      containers:
+        - name: consumer-service
+          image: container-registry.br-ne1.magalu.cloud/iceberg-related/consumer:latest
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args: ["uv run /app/iceberg_services/kafka_consumer.py"]
+          env:
+            - name: KAFKA_BROKER
+              value: kafka-service.kafka.svc.cluster.local:9092
+            - name: POSTGRES_HOST
+              value: postgres.postgres.svc.cluster.local:5032
+            - name: POSTGRES_PASSWORD
+              value: iceberg-postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: iceberg
+            - name: PYICEBERG_HOME
+              value: /app
+          volumeMounts:
+            - name: iceberg-config-volume
+              mountPath: "/app/.pyiceberg.yaml"
+              subPath: "catalog.yaml"
+              readOnly: true
+      volumes:
+        - name: iceberg-config-volume
+          secret:
+            secretName: iceberg-secrets
