@@ -8,7 +8,7 @@ from iceberg.iceberg import insert_to_iceberg
 
 logger = logging.getLogger(__name__)
 
-KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9093")
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
 
 logger.debug(f"\nThe broker is {KAFKA_BROKER}")
 
