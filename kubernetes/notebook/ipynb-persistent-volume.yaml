@@ -1,7 +1,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  namespace: postgres
+  namespace: jupyter
   name: manual
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
@@ -9,16 +9,16 @@ volumeBindingMode: WaitForFirstConsumer
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  namespace: postgres
-  name: postgres-volume
+  namespace: jupyter-notebook
+  name: jupyter-notebook-volume
   labels:
     type: local
-    app: postgres
+    app: jupyter-notebook
 spec:
   storageClassName: manual
   capacity:
     storage: 10Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   hostPath:
-    path: /data/postgresql
+    path: /data/jupyter-notebook

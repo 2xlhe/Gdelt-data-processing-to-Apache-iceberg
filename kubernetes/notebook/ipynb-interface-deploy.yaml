@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jupyter-notebook
+  name: jupyter-notebook
+  namespace: jupyter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter-notebook
+  template:
+    metadata:
+      labels:
+        app: jupyter-notebook
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 1000:1000 /home/jovyan"]
+          volumeMounts:
+            - mountPath: /home/jovyan
+              name: jupyter-persistent-storage
+      containers:
+        - name: jupyter-notebook
+          image: jupyter/datascience-notebook:x86_64-ubuntu-22.04
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+              name: http
+              protocol: TCP
+          args:
+            - start-notebook.sh
+            - --NotebookApp.token='luis'
+            - --NotebookApp.port=8090
+          env:
+            - name: POSTGRES_HOST
+              value: postgres.postgres.svc.cluster.local
+            - name: POSTGRES_PASSWORD
+              value: iceberg-postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: iceberg
+          volumeMounts:
+            - mountPath: /home/jovyan
+              name: jupyter-persistent-storage
+              readOnly: false
+      volumes:
+        - name: jupyter-persistent-storage
+          persistentVolumeClaim:
+            claimName: jupyter-notebook-volume-claim
